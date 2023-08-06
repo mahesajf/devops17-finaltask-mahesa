@@ -1,9 +1,29 @@
-version: '3.8'
+version: "3.8"
 services:
-  frontend:
-    build:
-      context: ./wayshub-frontend
-    container_name: wayshub-frontend
-    stdin_open: true
+   db:
+    image: postgres:latest
+    container_name: db-dumbmerch
     ports:
-      - 3000:3000 
+      - 5432:5432
+    volumes:
+      - ~/postgresql:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+   backend:
+    depends_on:
+      - db
+    image: mahesa/be-dumbmerch-production:latest
+    container_name: be-dumbmerch
+    stdin_open: true
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+   frontend:
+    image: mahesa/fe-dumbmerch-production:latest
+    container_name: fe-dumbmerch
+    stdin_open: true
+    restart: unless-stopped
+    ports:
+      - 3000:3000
