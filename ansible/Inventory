@@ -1,0 +1,11 @@
+[appserver]
+103.191.92.108
+
+[gateway]
+103.174.114.60
+
+[monitoring]
+103.176.79.213
+
+[all:vars]
+ansible_user=mahesa

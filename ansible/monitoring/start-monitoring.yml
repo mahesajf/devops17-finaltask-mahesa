@@ -1,0 +1,63 @@
+
+- name: Deploy Monitoring Stack
+  hosts: monitoring
+  become: true
+  tasks:
+    - name: Pull bitnami/prometheus Docker image
+      docker_image:
+        name: bitnami/prometheus
+        source: pull
+
+    - name: Pull grafana/grafana Docker image
+      docker_image:
+        name: grafana/grafana
+        source: pull
+
+    - name: Pull jenkins/jenkins Docker image
+      docker_image:
+        name: jenkins/jenkins
+        source: pull
+
+    - name: Create directories for Prometheus
+      file:
+        path: ~/prometheus/
+        state: directory
+        mode: "0755"      #rwx u-g-o
+
+    - name: Copy prometheus.yml configuration file
+      copy:
+        src: ~/final/ansible/lib/prometheus.yml
+        dest: ~/prometheus/prometheus.yml
+        mode: "0755"
+
+    - name: Run Prometheus container
+      docker_container:
+        name: prom
+        image: bitnami/prometheus
+        state: started
+        restart_policy: always
+        ports:
+          - "9090:9090"
+        volumes:
+          - "~/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+
+    - name: Run Grafana container
+      docker_container:
+        name: dashboard
+        image: grafana/grafana
+        state: started
+        restart_policy: always
+        ports:
+          - "3000:3000"
+
+    - name: Run Jenkins container
+      docker_container:
+        name: dashboard
+        image: jenkins/jenkins
+        state: started
+        restart_policy: always
+        ports:
+          - "8080:8080"
+
+    
+

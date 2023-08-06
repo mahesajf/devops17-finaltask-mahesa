@@ -1,0 +1,168 @@
+- name: Configurasi dulu yuk
+  hosts: all
+  become: true
+  tasks:
+    - name: Copy custom sources.list
+      copy:
+        src: /home/mahesa/final/ansible/lib/sources.list
+        dest: /etc/apt/sources.list
+    - name: Update apt package list
+      apt:
+        update_cache: yes
+
+    - name: Copy SSH public key to remote host
+      authorized_key:
+        user: mahesa
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        state: present
+
+    - name: Change PasswordAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: sshd
+        state: restarted
+
+- name: Docker Installation
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Perbarui daftar paket 2
+      apt:
+        update_cache: yes
+
+    - name: Install Docker Dependencies
+      apt:
+        name:
+          - lsb-release
+          - ca-certificates
+          - curl
+          - gnupg
+
+    - name: Install GPG Key for Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Tambahkan Repositori APT Docker
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+      notify:
+        - Perbarui daftar paket
+
+    - name: Install Docker Engine
+      apt:
+        update_cache: yes
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+
+    - name: Install Docker Compose
+      apt:
+        name: docker-compose
+        state: latest
+        update_cache: yes
+
+    - name: Install Python Dependencies
+      apt:
+        name: python3-pip
+        state: latest
+        update_cache: yes
+
+    - name: Upgrade requests-toolbelt package  # <--- Tanda baru
+      pip:
+        name: requests-toolbelt
+        state: latest
+        executable: pip3
+        extra_args: --upgrade
+
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
+        state: latest
+        executable: pip3
+
+    - name: Add user to the docker group
+      user:
+        name: mahesa
+        groups: docker
+        append: yes                   
+        state: present
+
+- name: Deploy Node Exporter with Docker
+  hosts: all
+  become: true
+  tasks:
+    - name: Pull the bitnami/node-exporter Docker image
+      docker_image:
+        name: bitnami/node-exporter
+        source: pull
+
+    - name: Run the Node Exporter container
+      docker_container:
+        name: node-exp
+        image: bitnami/node-exporter
+        state: started          
+        restart_policy: unless-stopped  
+        published_ports:
+          - "9100:9100"
+
+- name: Create Update nginx
+  hosts: gateway
+  become: true
+  tasks:
+    - name: Ensure nginx is at the latest version
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Install Certbot and Nginx
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+          - nginx
+        state: latest
+        update_cache: yes
+
+    - name: Start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: Copy proxy-dumbmerch.conf
+      copy:
+        src: ~/final/ansible/lib/proxy-dumbmerch.conf
+        dest: /etc/nginx/sites-available/
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Create symbolic link for proxy-dumbmerch.conf
+      file:
+        src: /etc/nginx/sites-available/proxy-dumbmerch.conf
+        dest: /etc/nginx/sites-enabled/proxy-dumbmerch.conf
+        state: link
+
+    - name: Install Certbot with Snap
+      snap:
+        name: certbot
+        classic: yes
+        state: present
+        
+    - name: Obtain SSL certificate with Certbot
+      command: certbot --nginx -d --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Reload Nginx after obtaining SSL certificate
+      service:
+        name: nginx
+        state: reloaded

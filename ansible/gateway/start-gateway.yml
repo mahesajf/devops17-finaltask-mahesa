@@ -1,0 +1,65 @@
+---
+- name: Deploy Node Exporter with Docker
+  hosts: appserver, gateway
+  become: true
+  tasks:
+    - name: Pull the bitnami/node-exporter Docker image
+      docker_image:
+        name: bitnami/node-exporter
+        source: pull
+
+    - name: Run the Node Exporter container
+      docker_container:
+        name: node-exp
+        image: bitnami/node-exporter
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "9100:9100"
+
+- name: update nginx
+  hosts: gateway
+  tasks:
+  become: true         #ini terbalik ke line 22
+    - name: ensure nginx is at the latest version
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: copy the nginx config wayshub
+      copy:
+        src: /home/mahesa/ansible/lib/reverse-proxy-wayshub.conf
+        dest: /etc/nginx/sites-enabled/reverse-proxy-wayshub.conf
+
+    - name: copy the nginx config prometheus
+      copy:
+        src: /home/mahesa/ansible/lib/reverse-proxy-prometheus.conf
+        dest: /etc/nginx/sites-enabled/reverse-proxy-prometheus.conf
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Install Certbot with Snap
+      snap:
+        name: certbot
+        classic: yes
+        state: present
+
+    - name: Obtain and install SSL certificate with Certbot Nginx wayshub
+      command: certbot --nginx -d mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx prometheus
+      command: certbot --nginx -d prom.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded

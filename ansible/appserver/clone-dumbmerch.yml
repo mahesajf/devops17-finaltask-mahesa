@@ -1,0 +1,28 @@
+- name: Git Clone Dumerch
+  hosts: appserver
+  tasks:
+  - name: Pull the bitnami/postgresql Docker image
+    docker_image:
+      name: bitnami/postgresql
+      source: pull
+
+  - name: Run Postgresql
+    docker_container:
+      name: postgresql
+      image: bitnami/postgresql
+      state: started          # menjalankan kontainer jika belum berjalan
+      restart_policy: unless-stopped  # kontainer akan direstart secara otomatis kecuali jika dihentikan secara manual
+      published_ports:
+          - "5432:5432"
+
+  - name: Clone a github repository Dumbmerch FE
+    git:
+      repo: https://github.com/demo-dumbways/fe-dumbmerch.git
+      dest: /home/mahesa/fe-dumbmerch
+      clone: yes
+
+  - name: Clone a github repository Dumbmerch BE
+    git:
+      repo: https://github.com/demo-dumbways/be-dumbmerch.git
+      dest: /home/mahesa/be-dumbmerch
+      clone: yes

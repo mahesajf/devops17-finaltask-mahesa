@@ -1,0 +1,72 @@
+- name: Create Update nginx
+  hosts: gateway
+  become: true
+  tasks:
+    - name: Ensure nginx is at the latest version
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Install Certbot and Nginx
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+          - nginx
+        state: latest
+        update_cache: yes
+
+    - name: Start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: Copy proxy-dumbmerch.conf
+      copy:
+        src: ~/final/ansible/lib/proxy-dumbmerch.conf
+        dest: /etc/nginx/sites-available/
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Create symbolic link for proxy-dumbmerch.conf
+      file:
+        src: /etc/nginx/sites-available/proxy-dumbmerch.conf
+        dest: /etc/nginx/sites-enabled/proxy-dumbmerch.conf
+        state: link
+
+    - name: Install Certbot with Snap
+      snap:
+        name: certbot
+        classic: yes
+        state: present
+        
+    - name: Obtain and install SSL certificate with Certbot Nginx Dumbmerch
+      command: certbot --nginx -d mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx prometheus
+      command: certbot --nginx -d prom.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx Api
+      command: certbot --nginx -d api.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx Grafana
+      command: certbot --nginx -d graf.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx Jenkins
+      command: certbot --nginx -d jen.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx Node App
+      command: certbot --nginx -d node-app.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx Node Gate
+      command: certbot --nginx -d node-gate.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Obtain and install SSL certificate with Certbot Nginx Node Moni
+      command: certbot --nginx -d node-moni.mahesa.studentdumbways.my.id --non-interactive --agree-tos --email mahesajihanfadhlurrahman@gmail.com
+
+    - name: Reload Nginx after obtaining SSL certificate
+      service:
+        name: nginx
+        state: reloaded
