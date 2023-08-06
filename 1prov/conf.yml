@@ -15,13 +15,13 @@
         regexp: 'http://mirrors\.idcloudhost\.com/ubuntu'
         replace: 'http://archive.ubuntu.com/ubuntu'
 
-    - name: Change PasswordAuthentication for idch
+    - name: Change PasswordAuthentication for idch         # <------------ Disable Pass Login
       replace:
         path: /etc/ssh/sshd_config.d/50-cloudimg-settings.conf  # <------------ tiap server berbeda
         regexp: 'PasswordAuthentication yes'
         replace: 'PasswordAuthentication no'
 
-    - name: Change PasswordAuthentication
+    - name: Change PasswordAuthentication                  # <------------ Disable Pass Login
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^PasswordAuthentication'
