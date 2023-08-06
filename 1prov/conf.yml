@@ -1,0 +1,39 @@
+# konfigurasi
+
+- hosts: all
+  become: true
+  tasks:
+    - name: Copy SSH public key to remote host
+      authorized_key:
+        user: mahesa
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        state: present
+
+    - name: Change repository apt                               # Configurasi mirror khusus idch
+      replace:
+        path: /etc/apt/sources.list
+        regexp: 'http://mirrors\.idcloudhost\.com/ubuntu'
+        replace: 'http://archive.ubuntu.com/ubuntu'
+
+    - name: Change PasswordAuthentication for idch
+      replace:
+        path: /etc/ssh/sshd_config.d/50-cloudimg-settings.conf  # <------------ tiap server berbeda
+        regexp: 'PasswordAuthentication yes'
+        replace: 'PasswordAuthentication no'
+
+    - name: Change PasswordAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+      notify:
+        - Restart SSH
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: sshd
+        state: restarted
+
+      
