@@ -1,7 +1,6 @@
-FROM node:14.21.3-alpine
+FROM node:16 AS build
 WORKDIR /app
-copy . .
+COPY . .
 RUN npm install
 EXPOSE 3000
-CMD [ "npm", "start" ]
-
+CMD ["yarn", "start"]
