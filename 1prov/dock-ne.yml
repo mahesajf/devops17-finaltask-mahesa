@@ -1,0 +1,79 @@
+# install docker & node exporter pull form dockerhub
+- hosts: all
+  become: true
+  vars:
+    user: mahesa
+  tasks:
+    - name: Install Docker Dependencies
+      apt:
+        update_cache: yes
+        name:
+          - lsb-release
+          - ca-certificates
+          - curl
+          - gnupg
+
+    - name: Install GPG Key for Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add Docker APT Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+
+    - name: Install Docker Engine
+      apt:
+        update_cache: yes
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+
+    - name: Install Docker Compose
+      apt:
+        name: docker-compose
+        state: latest
+        update_cache: yes
+
+    - name: Install Python Dependencies
+      apt:
+        name: python3-pip
+        state: latest
+        update_cache: yes
+
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
+        state: latest
+        executable: pip3
+
+    - name: Add user to the docker group
+      user:
+        name: "{{ user }}"
+        groups: docker
+        append: yes
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+
+    - name: Enable Docker on boot
+      service:
+        name: docker
+        enabled: yes
+
+    - name: Pull the bitnami/node-exporter Docker image
+      docker_image:
+        name: bitnami/node-exporter
+        source: pull
+
+    - name: Run the Node Exporter container
+      docker_container:
+        name: node-exp
+        image: bitnami/node-exporter
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "9100:9100"
