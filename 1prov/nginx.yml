@@ -1,0 +1,23 @@
+- hosts: gateway
+  become: true
+  tasks:
+    - name: Installing nginx
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: Copy reverse-proxy
+      copy:
+        src: ~/reverse-proxy.conf               # <-------------
+        dest: /etc/nginx/sites-enabled
+
+    - name: Reload nginx
+      service:
+        name: nginx
+        state: reloaded
